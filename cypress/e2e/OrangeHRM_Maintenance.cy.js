@@ -50,7 +50,9 @@ describe('OrangeHRM - Maintenance Module', () => {
   // PURGE RECORDS
   // ================================
 
-  it('TC03 - verifies Purge Records page tabs', () => {
+  s('.oxd-topbar-body-nav-tab-item', 'Purge Records', { timeout: 30000 }).should('be.visible')
+    cy.contains('.oxd-topbar-body-nav-tab-item', 'Access Records', { timeout: 30000 }).should('be.visible')
+  })it('TC03 - verifies Purge Records page tabs', () => {
     cy.get('.oxd-input-group', { timeout: 30000 })
       .contains('Password')
       .parent().parent().find('input')
@@ -58,9 +60,7 @@ describe('OrangeHRM - Maintenance Module', () => {
     cy.contains('button', 'Confirm', { timeout: 30000 }).click()
     cy.url({ timeout: 60000 }).should('include', '/maintenance/purgeEmployee')
 
-    cy.contains('.oxd-topbar-body-nav-tab-item', 'Purge Records', { timeout: 30000 }).should('be.visible')
-    cy.contains('.oxd-topbar-body-nav-tab-item', 'Access Records', { timeout: 30000 }).should('be.visible')
-  })
+    cy.contain
 
     it('TC04 - verifies Purge Records search fields are visible', () => {
     cy.get('.oxd-input-group', { timeout: 30000 })
