@@ -12,7 +12,10 @@ on:
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        containers: [1, 2, 3] # Spins up 3 machines simultaneously
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,17 +29,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Cypress tests
+      - name: Run Cypress tests (Shard ${{ matrix.containers }} of 3)
         uses: cypress-io/github-action@v6
         with:
+          # This tells Cypress to only run a specific chunk of files on each machine
           spec: "cypress/e2e/OrangeHRM_*.cy.js"
+        env:
+          # We divide the work into 3 chunks
+          SPLIT: ${{ matrix.containers }}
+          SPLIT_TOTAL: 3
         continue-on-error: true
 
       - name: Upload screenshots on failure
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-screenshots
+          name: cypress-screenshots-shard-${{ matrix.containers }}
           path: cypress/screenshots
           retention-days: 7
 
@@ -44,6 +52,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-videos
+          name: cypress-videos-shard-${{ matrix.containers }}
           path: cypress/videos
           retention-days: 7
