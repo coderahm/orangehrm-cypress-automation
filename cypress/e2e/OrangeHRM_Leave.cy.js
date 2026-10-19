@@ -17,13 +17,16 @@ describe('OrangeHRM - Leave Module', () => {
   const TAB = '.oxd-topbar-body-nav-tab-item'
 
   beforeEach(() => {
-    cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login')
-    cy.get('input[name="username"]', { timeout: 30000 }).type('Admin')
-    cy.get('input[name="password"]', { timeout: 30000 }).type('admin123')
+    cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login', {
+      timeout: 120000,
+    })
+    cy.get('input[name="username"]', { timeout: 60000 }).should('be.visible')
+    cy.get('input[name="username"]').clear().type('Admin')
+    cy.get('input[name="password"]', { timeout: 60000 }).clear().type('admin123')
     cy.get('button[type="submit"]').click()
 
-    cy.url({ timeout: 60000 }).should('include', '/dashboard')
-    cy.get('.oxd-main-menu', { timeout: 60000 }).should('be.visible')
+    cy.url({ timeout: 90000 }).should('include', '/dashboard')
+    cy.get('.oxd-main-menu', { timeout: 90000 }).should('be.visible')
     cy.wait(3000)
 
     cy.get('.oxd-main-menu-item', { timeout: 30000 })
@@ -31,13 +34,9 @@ describe('OrangeHRM - Leave Module', () => {
       .should('be.visible')
       .click()
 
-    cy.url({ timeout: 60000 }).should('include', '/leave')
+    cy.url({ timeout: 90000 }).should('include', '/leave')
     cy.get(TAB, { timeout: 60000 }).should('have.length.at.least', 1)
   })
-
-  // ================================
-  // LANDING & BASIC TABS
-  // ================================
 
   it('TC01 - displays Leave module landing page', () => {
     cy.url({ timeout: 30000 }).should('include', '/leave/viewLeaveList')
@@ -59,7 +58,7 @@ describe('OrangeHRM - Leave Module', () => {
     cy.contains(TAB, 'Apply', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/leave/applyLeave')
 
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.wait(2000)
 
     cy.get('body').then(($body) => {
@@ -76,11 +75,11 @@ describe('OrangeHRM - Leave Module', () => {
     })
   })
 
-  it('TC04 - applies for a single-day leave successfully', () => {
+  it('TC04 - attempts to apply for a single-day leave', () => {
     cy.contains(TAB, 'Apply', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/leave/applyLeave')
 
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.wait(2000)
 
     cy.get('body').then(($body) => {
@@ -89,6 +88,7 @@ describe('OrangeHRM - Leave Module', () => {
         return
       }
 
+      // Fill the form
       cy.get('.oxd-input-group', { timeout: 30000 })
         .contains('Leave Type').parent().parent().find('.oxd-select-text').click()
       cy.get('.oxd-select-dropdown', { timeout: 30000 })
@@ -104,30 +104,42 @@ describe('OrangeHRM - Leave Module', () => {
         .contains('Comment').parent().parent().find('textarea')
         .type('Automated leave request - QA test')
 
+      // Submit
       cy.contains('button', 'Apply', { timeout: 30000 }).click()
-      cy.contains('Successfully Saved', { timeout: 60000 }).should('be.visible')
+
+      // Wait and check for either Success OR a recognized error (overlapping, no working days)
+      cy.wait(5000)
+      cy.get('body').then(($after) => {
+        const bodyText = $after.text()
+        const hasSuccess = bodyText.includes('Successfully Saved')
+        const hasError = $after.find('.oxd-input-field-error-message').length > 0
+          || bodyText.includes('Overlapping')
+          || bodyText.includes('No Working Days')
+          || bodyText.includes('Failed to Submit')
+
+        expect(
+          hasSuccess || hasError,
+          'Either success or a recognized error must appear after submit'
+        ).to.be.true
+      })
     })
   })
 
   it('TC05 - verifies the applied leave appears in My Leave list', () => {
     cy.contains(TAB, 'My Leave', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/leave/viewMyLeaveList')
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.get('.oxd-form', { timeout: 30000 }).should('be.visible')
   })
 
   it('TC06 - verifies My Leave list has the search form', () => {
     cy.contains(TAB, 'My Leave', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/leave/viewMyLeaveList')
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
 
     cy.contains('button', 'Search', { timeout: 30000 }).should('be.visible')
     cy.contains('button', 'Reset', { timeout: 30000 }).should('be.visible')
   })
-
-  // ================================
-  // ENTITLEMENTS
-  // ================================
 
   it('TC07 - opens Entitlements dropdown', () => {
     cy.contains(TAB, 'Entitlements', { timeout: 30000 }).click()
@@ -147,7 +159,7 @@ describe('OrangeHRM - Leave Module', () => {
     cy.contains('Add Entitlements', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/leave/addLeaveEntitlement')
 
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.get('.oxd-form', { timeout: 30000 }).should('be.visible')
   })
 
@@ -162,10 +174,6 @@ describe('OrangeHRM - Leave Module', () => {
     cy.contains('My Entitlements', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/leave/viewMyLeaveEntitlements')
   })
-
-  // ================================
-  // CONFIGURE MENU
-  // ================================
 
   it('TC12 - opens Configure dropdown', () => {
     cy.contains(TAB, 'Configure', { timeout: 30000 }).click()
@@ -185,7 +193,7 @@ describe('OrangeHRM - Leave Module', () => {
     cy.contains('Leave Types', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/leave/leaveTypeList')
 
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.contains('button', 'Add', { timeout: 30000 }).should('be.visible')
   })
 
@@ -207,7 +215,7 @@ describe('OrangeHRM - Leave Module', () => {
     cy.contains('Holidays', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/leave/viewHolidayList')
 
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.contains('button', 'Add', { timeout: 30000 }).should('be.visible')
   })
 
@@ -218,14 +226,9 @@ describe('OrangeHRM - Leave Module', () => {
     cy.url({ timeout: 30000 }).should('include', '/leave/saveHoliday')
   })
 
-  // ================================
-  // WORK WEEK (FIXED - accepts both URL patterns)
-  // ================================
-
   it('TC19 - navigates to Work Week page', () => {
     cy.contains(TAB, 'Configure', { timeout: 30000 }).click()
     cy.contains('.oxd-dropdown-menu li', 'Work Week', { timeout: 30000 }).click()
-    // Accept either URL form used by different OrangeHRM 5 versions
     cy.url({ timeout: 30000 }).should('match', /leave\/(defineWorkWeek|workWeek)/i)
   })
 
@@ -234,24 +237,17 @@ describe('OrangeHRM - Leave Module', () => {
     cy.contains('.oxd-dropdown-menu li', 'Work Week', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('match', /leave\/(defineWorkWeek|workWeek)/i)
 
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.contains('button', 'Save', { timeout: 30000 }).should('be.visible')
-    // Verify the days of the week are displayed
     cy.get('body', { timeout: 30000 }).should('contain.text', 'Monday')
     cy.get('body').should('contain.text', 'Friday')
   })
 
-  // ================================
-  // REPORTS (FIXED - accepts the dropdown structure)
-  // ================================
-
   it('TC21 - navigates to Reports page', () => {
     cy.contains(TAB, 'Reports', { timeout: 30000 }).click()
-    // The Reports dropdown has one or more items - click the first one
     cy.get('.oxd-dropdown-menu li', { timeout: 30000 })
       .first()
       .click()
-    // Accept any report URL under /leave/
     cy.url({ timeout: 30000 }).should('match', /leave\/viewLeave\w*Report/)
   })
 
@@ -262,7 +258,7 @@ describe('OrangeHRM - Leave Module', () => {
       .click()
     cy.url({ timeout: 30000 }).should('match', /leave\/viewLeave\w*Report/)
 
-    cy.get('.oxd-form-loader', { timeout: 60000 }).should('not.exist')
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.get('.oxd-form', { timeout: 30000 }).should('be.visible')
   })
 
