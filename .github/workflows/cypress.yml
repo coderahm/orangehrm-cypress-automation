@@ -15,7 +15,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        containers: [1, 2, 3] # Spins up 3 machines simultaneously
+        # Here is where we manually assign the files to each machine
+        shard: 
+          - "cypress/e2e/OrangeHRM_Admin.cy.js,cypress/e2e/OrangeHRM_Buzz.cy.js,cypress/e2e/OrangeHRM_Claim.cy.js,cypress/e2e/OrangeHRM_Directory.cy.js"
+          - "cypress/e2e/OrangeHRM_Leave.cy.js,cypress/e2e/OrangeHRM_Login.cy.js,cypress/e2e/OrangeHRM_Maintenance.cy.js,cypress/e2e/OrangeHRM_MyInfo.cy.js"
+          - "cypress/e2e/OrangeHRM_Performance.cy.js,cypress/e2e/OrangeHRM_PIM.cy.js,cypress/e2e/OrangeHRM_Time.cy.js,cypress/e2e/OrangeHRM_dashboard.cy.js"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,29 +33,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Cypress tests (Shard ${{ matrix.containers }} of 3)
+      - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
-          # This tells Cypress to only run a specific chunk of files on each machine
-          spec: "cypress/e2e/OrangeHRM_*.cy.js, !cypress/e2e/OrangeHRM_Recruitment.cy.js"
-        env:
-          # We divide the work into 3 chunks
-          SPLIT: ${{ matrix.containers }}
-          SPLIT_TOTAL: 3
+          # This passes the specific list of files for THIS machine
+          spec: ${{ matrix.shard }}
         continue-on-error: true
 
       - name: Upload screenshots on failure
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-screenshots-shard-${{ matrix.containers }}
+          name: cypress-screenshots-${{ strategy.job-index }}
           path: cypress/screenshots
-          retention-days: 7
-
-      - name: Upload videos on failure
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: cypress-videos-shard-${{ matrix.containers }}
-          path: cypress/videos
           retention-days: 7
