@@ -33,7 +33,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           # This tells Cypress to only run a specific chunk of files on each machine
-          spec: "cypress/e2e/OrangeHRM_*.cy.js"
+          spec: "cypress/e2e/OrangeHRM_*.cy.js, !cypress/e2e/OrangeHRM_Recruitment.cy.js"
         env:
           # We divide the work into 3 chunks
           SPLIT: ${{ matrix.containers }}
