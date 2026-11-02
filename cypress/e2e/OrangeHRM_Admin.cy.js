@@ -2,12 +2,9 @@ describe('OrangeHRM - Admin Module (Full)', () => {
 
   const timestamp = Date.now()
   const TAB = '.oxd-topbar-body-nav-tab-item'
-
-  const newJobTitle = {
-    title: `QA Engineer ${timestamp}`,
-    description: 'Automated test job title',
-  }
-
+  
+  // Data for new tests
+  const newUsername = `QA_User_${timestamp}`
   const newLocation = {
     name: `Test Office ${timestamp}`,
     city: 'Karachi',
@@ -83,6 +80,63 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.get('.oxd-input-field-error-message').should('have.length.at.least', 3)
   })
 
+  // ==========================================
+  // NEW TESTS: FULL CRUD FOR USER MANAGEMENT
+  // ==========================================
+
+  it('TC05.5 - creates a new system user successfully', () => {
+    cy.contains('button', 'Add', { timeout: 30000 }).click()
+    cy.url({ timeout: 30000 }).should('include', '/admin/saveSystemUser')
+
+    // 1. User Role
+    cy.get('.oxd-input-group').contains('User Role').parent().parent().find('.oxd-select-text').click()
+    cy.get('.oxd-select-dropdown .oxd-select-option').contains('Admin').click()
+
+    // 2. Employee Name (Autocomplete)
+    cy.get('.oxd-input-group').contains('Employee Name').parent().parent().find('input').type('manda')
+    cy.wait(2000)
+    cy.get('.oxd-autocomplete-dropdown .oxd-autocomplete-option').first().click()
+
+    // 3. Status
+    cy.get('.oxd-input-group').contains('Status').parent().parent().find('.oxd-select-text').click()
+    cy.get('.oxd-select-dropdown .oxd-select-option').contains('Enabled').click()
+
+    // 4. Credentials
+    cy.get('.oxd-input-group').contains('Username').parent().parent().find('input').type(newUsername)
+    cy.get('.oxd-input-group').contains('Password').first().parent().parent().find('input').type('Password123!')
+    cy.get('.oxd-input-group').contains('Confirm Password').parent().parent().find('input').type('Password123!')
+
+    // 5. Save
+    cy.contains('button', 'Save').click()
+    cy.contains('Successfully Saved', { timeout: 30000 }).should('be.visible')
+  })
+
+  it('TC05.6 - searches and verifies the newly created user exists', () => {
+    cy.get('.oxd-input-group').contains('Username').parent().parent().find('input').type(newUsername)
+    cy.contains('button', 'Search').click()
+    
+    cy.get('.oxd-table-body .oxd-table-card', { timeout: 30000 }).should('have.length.at.least', 1)
+    cy.contains('.oxd-table-card', newUsername).should('be.visible')
+  })
+
+  it('TC05.7 - edits the newly created user role', () => {
+    // Find the user
+    cy.get('.oxd-input-group').contains('Username').parent().parent().find('input').type(newUsername)
+    cy.contains('button', 'Search').click()
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
+
+    // Click Edit
+    cy.get('.oxd-table-body .oxd-table-card').first().find('button[title="Edit"]').click()
+    cy.url({ timeout: 30000 }).should('include', '/admin/saveSystemUser/')
+
+    // Change status to Disabled
+    cy.get('.oxd-input-group').contains('Status').parent().parent().find('.oxd-select-text').click()
+    cy.get('.oxd-select-dropdown .oxd-select-option').contains('Disabled').click()
+    
+    cy.contains('button', 'Save').click()
+    cy.contains('Successfully Updated', { timeout: 30000 }).should('be.visible')
+  })
+
   // ================================
   // JOB TITLES
   // ================================
@@ -101,11 +155,11 @@ describe('OrangeHRM - Admin Module (Full)', () => {
 
     cy.get('.oxd-input-group', { timeout: 30000 })
       .contains('Job Title')
-      .parent().parent().find('input').type(newJobTitle.title)
+      .parent().parent().find('input').type(`QA Engineer ${timestamp}`)
 
     cy.get('.oxd-input-group', { timeout: 30000 })
       .contains('Job Description')
-      .parent().parent().find('textarea').type(newJobTitle.description)
+      .parent().parent().find('textarea').type('Automated test job title')
 
     cy.contains('button', 'Save', { timeout: 30000 }).click()
     cy.contains('Successfully Saved', { timeout: 60000 }).should('be.visible')
@@ -114,7 +168,7 @@ describe('OrangeHRM - Admin Module (Full)', () => {
   it('TC08 - verifies the newly created job title appears in the list', () => {
     cy.contains(TAB, 'Job', { timeout: 30000 }).click()
     cy.contains('.oxd-dropdown-menu li', 'Job Titles', { timeout: 30000 }).click()
-    cy.get('.oxd-table-body', { timeout: 30000 }).should('contain.text', newJobTitle.title)
+    cy.get('.oxd-table-body', { timeout: 30000 }).should('contain.text', `QA Engineer ${timestamp}`)
   })
 
   // ================================
@@ -133,20 +187,24 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.contains('button', 'Add', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/admin/saveLocation')
 
+    // Fill Name
     cy.get('.oxd-input-group', { timeout: 30000 })
       .contains('Name')
       .parent().parent().find('input').type(newLocation.name)
 
+    // Fill City
     cy.get('.oxd-input-group', { timeout: 30000 })
       .contains('City')
       .parent().parent().find('input').type(newLocation.city)
 
+    // Select Country (Custom Dropdown)
     cy.get('.oxd-input-group', { timeout: 30000 })
       .contains('Country')
       .parent().parent().find('.oxd-select-text').click()
     cy.get('.oxd-select-dropdown', { timeout: 30000 })
       .contains(newLocation.country).click()
 
+    // Save
     cy.contains('button', 'Save', { timeout: 30000 }).click()
     cy.contains('Successfully Saved', { timeout: 60000 }).should('be.visible')
   })
