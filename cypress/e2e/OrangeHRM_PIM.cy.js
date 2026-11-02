@@ -1,4 +1,3 @@
-
 describe('OrangeHRM - PIM Module (Full)', () => {
 
   const timestamp = Date.now()
@@ -61,7 +60,6 @@ describe('OrangeHRM - PIM Module (Full)', () => {
     cy.get('input[placeholder="Type for hints..."]', { timeout: 30000 })
       .first().type(newEmployee.firstName)
 
-    // Robust dropdown handling
     cy.get('.oxd-autocomplete-dropdown .oxd-autocomplete-option', { timeout: 30000 })
       .should('be.visible')
       .first()
@@ -263,7 +261,7 @@ describe('OrangeHRM - PIM Module (Full)', () => {
     // 2. Click the profile picture avatar to open upload modal
     cy.get('.orangehrm-edit-employee-image', { timeout: 30000 }).click()
     
-    // 3. Upload file
+    // 3. Upload file (Requires 'dummy.jpg' in your cypress/fixtures folder!)
     cy.get('input[type="file"]').selectFile('cypress/fixtures/dummy.jpg', { force: true })
     
     // 4. Save
