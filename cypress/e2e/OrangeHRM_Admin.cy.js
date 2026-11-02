@@ -92,10 +92,12 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.get('.oxd-input-group').contains('User Role').parent().parent().find('.oxd-select-text').click()
     cy.get('.oxd-select-dropdown .oxd-select-option').contains('Admin').click()
 
-    // 2. Employee Name (Autocomplete)
+    // 2. Employee Name (Autocomplete) - FIXED
     cy.get('.oxd-input-group').contains('Employee Name').parent().parent().find('input').type('manda')
-    cy.wait(2000)
-    cy.get('.oxd-autocomplete-dropdown .oxd-autocomplete-option').first().click()
+    cy.get('.oxd-autocomplete-dropdown .oxd-autocomplete-option', { timeout: 15000 })
+      .first()
+      .should('be.visible')
+      .click()
 
     // 3. Status
     cy.get('.oxd-input-group').contains('Status').parent().parent().find('.oxd-select-text').click()
@@ -197,12 +199,16 @@ describe('OrangeHRM - Admin Module (Full)', () => {
       .contains('City')
       .parent().parent().find('input').type(newLocation.city)
 
-    // Select Country (Custom Dropdown)
+    // Select Country (Custom Dropdown) - FIXED
     cy.get('.oxd-input-group', { timeout: 30000 })
       .contains('Country')
-      .parent().parent().find('.oxd-select-text').click()
-    cy.get('.oxd-select-dropdown', { timeout: 30000 })
-      .contains(newLocation.country).click()
+      .parent().parent().find('.oxd-select-text')
+      .click({ force: true })
+      
+    cy.get('.oxd-select-dropdown', { timeout: 15000 })
+      .should('be.visible')
+      .contains(newLocation.country)
+      .click({ force: true })
 
     // Save
     cy.contains('button', 'Save', { timeout: 30000 }).click()
