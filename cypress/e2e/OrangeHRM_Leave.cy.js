@@ -1,5 +1,8 @@
 describe('OrangeHRM - Leave Module', () => {
 
+  // ==========================================
+  // Dynamic Date Generation
+  // ==========================================
   const today = new Date()
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -8,7 +11,8 @@ describe('OrangeHRM - Leave Module', () => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${day}-${month}`
+    // OrangeHRM standard input format: YYYY-DD-MM
+    return `${year}-${day}-${month}` 
   }
 
   const fromDate = formatDate(today)
@@ -16,7 +20,11 @@ describe('OrangeHRM - Leave Module', () => {
 
   const TAB = '.oxd-topbar-body-nav-tab-item'
 
+  // ==========================================
+  // Setup (Before Each)
+  // ==========================================
   beforeEach(() => {
+    // 1. Login
     cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login', {
       timeout: 120000,
     })
@@ -27,8 +35,9 @@ describe('OrangeHRM - Leave Module', () => {
 
     cy.url({ timeout: 90000 }).should('include', '/dashboard')
     cy.get('.oxd-main-menu', { timeout: 90000 }).should('be.visible')
-    cy.wait(3000)
+    cy.wait(3000) // Allow dashboard widgets to fully load
 
+    // 2. Navigate to Leave Module
     cy.get('.oxd-main-menu-item', { timeout: 30000 })
       .contains('Leave')
       .should('be.visible')
@@ -37,6 +46,10 @@ describe('OrangeHRM - Leave Module', () => {
     cy.url({ timeout: 90000 }).should('include', '/leave')
     cy.get(TAB, { timeout: 60000 }).should('have.length.at.least', 1)
   })
+
+  // ==========================================
+  // Original Test Cases (01 - 22)
+  // ==========================================
 
   it('TC01 - displays Leave module landing page', () => {
     cy.url({ timeout: 30000 }).should('include', '/leave/viewLeaveList')
@@ -107,7 +120,7 @@ describe('OrangeHRM - Leave Module', () => {
       // Submit
       cy.contains('button', 'Apply', { timeout: 30000 }).click()
 
-      // Wait and check for either Success OR a recognized error (overlapping, no working days)
+      // Wait and check for either Success OR a recognized error
       cy.wait(5000)
       cy.get('body').then(($after) => {
         const bodyText = $after.text()
@@ -260,6 +273,59 @@ describe('OrangeHRM - Leave Module', () => {
 
     cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.get('.oxd-form', { timeout: 30000 }).should('be.visible')
+  })
+
+  // ==========================================
+  // NEW EXPANSIONS (TC23 - TC24)
+  // ==========================================
+
+  it('TC23 - verifies applied leave can be cancelled from My Leave', () => {
+    cy.contains(TAB, 'My Leave', { timeout: 30000 }).click()
+    cy.url({ timeout: 30000 }).should('include', '/leave/viewMyLeaveList')
+    
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
+    
+    // Check if there are rows in the table to cancel
+    cy.get('body').then(($body) => {
+      if ($body.find('.oxd-table-body .oxd-table-card').length > 0) {
+        
+        // Click Cancel on the first row
+        cy.get('.oxd-table-body .oxd-table-card')
+          .first()
+          .contains('button', 'Cancel')
+          .click()
+          
+        cy.contains('Are you sure you want to cancel this leave request?').should('be.visible')
+        cy.contains('button', 'Yes, Cancel').click()
+        
+        // Assert success message
+        cy.contains('Successfully Cancelled', { timeout: 15000 }).should('be.visible')
+      } else {
+        cy.log('No leave records found to cancel. Skipping cancellation steps.')
+      }
+    })
+  })
+
+  it('TC24 - verifies the Reset button clears the My Leave search form', () => {
+    cy.contains(TAB, 'My Leave', { timeout: 30000 }).click()
+    cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
+
+    // 1. Select a Leave Type
+    cy.get('.oxd-input-group').contains('Leave Type').parent().parent().find('.oxd-select-text').click()
+    cy.get('.oxd-select-dropdown .oxd-select-option').eq(1).click()
+
+    // 2. Type a date
+    cy.get('.oxd-input-group').contains('From Date').parent().parent().find('input').type('2024-01-01')
+
+    // 3. Click Reset
+    cy.contains('button', 'Reset').click()
+
+    // 4. Assert the form is cleared
+    cy.get('.oxd-input-group').contains('Leave Type').parent().parent().find('.oxd-select-text')
+      .should('contain.text', 'Select')
+      
+    cy.get('.oxd-input-group').contains('From Date').parent().parent().find('input')
+      .should('have.value', '')
   })
 
 })
