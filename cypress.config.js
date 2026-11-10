@@ -1,16 +1,16 @@
 const { defineConfig } = require("cypress");
-const cypressSplit = require("cypress-split"); // ADD THIS LINE
 
 module.exports = defineConfig({
   e2e: {
     baseUrl: 'https://opensource-demo.orangehrmlive.com',
     defaultCommandTimeout: 20000,
     pageLoadTimeout: 120000,
-    viewportWidth: 1280,
-    viewportHeight: 800,
+    retries: {
+      runMode: 2,   // Retries failed tests 2 times in GitHub Actions
+      openMode: 0
+    },
     setupNodeEvents(on, config) {
-      cypressSplit(on, config); // ADD THIS LINE
-      return config; // ADD THIS LINE
+      // implement node event listeners here
     },
   },
 });
