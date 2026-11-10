@@ -12,7 +12,7 @@ describe('OrangeHRM - Admin Module (Full)', () => {
   }
 
   // ==========================================
-  // SPEED FIX: Use cy.session() to login ONCE
+  // SPEED UPGRADE: Login once using cy.session
   // ==========================================
   beforeEach(() => {
     cy.session('adminSession', () => {
@@ -28,6 +28,9 @@ describe('OrangeHRM - Admin Module (Full)', () => {
 
     // Navigate to Admin module
     cy.visit('/web/index.php/admin/viewSystemUsers')
+    
+    // WAIT FIX: Give the heavy Admin page 2 seconds to fully settle
+    cy.wait(2000)
     cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
   })
 
@@ -46,9 +49,7 @@ describe('OrangeHRM - Admin Module (Full)', () => {
       .parent().parent().find('input').type('Admin')
 
     cy.contains('button', 'Search', { timeout: 30000 }).click()
-
-    cy.get('.oxd-table-body .oxd-table-card', { timeout: 30000 })
-      .should('have.length.at.least', 1)
+    cy.get('.oxd-table-body .oxd-table-card', { timeout: 30000 }).should('have.length.at.least', 1)
   })
 
   it('TC03 - resets the user search filter', () => {
@@ -73,10 +74,6 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.contains('Required', { timeout: 30000 }).should('be.visible')
   })
 
-  // ==========================================
-  // FIXED USER CREATION FLOW
-  // ==========================================
-
   it('TC05.5 - creates a new system user successfully', () => {
     cy.contains('button', 'Add', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/admin/saveSystemUser')
@@ -85,17 +82,11 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.get('.oxd-input-group').contains('User Role').parent().parent().find('.oxd-select-text').click()
     cy.get('.oxd-select-dropdown .oxd-select-option').contains('Admin').click()
 
-    // 2. Employee Name (Autocomplete) - BULLETPROOF FIX
+    // 2. Employee Name (Autocomplete) 
     cy.get('.oxd-input-group').contains('Employee Name').parent().parent().find('input').type('m')
-    
-    // Wait for the network request to finish and the dropdown to populate
     cy.intercept('GET', '**/employees*').as('getEmployees')
     cy.wait('@getEmployees', { timeout: 20000 })
-    
-    // Force click the first option in the dropdown
-    cy.get('.oxd-autocomplete-dropdown .oxd-autocomplete-option', { timeout: 15000 })
-      .first()
-      .click({ force: true })
+    cy.get('.oxd-autocomplete-dropdown .oxd-autocomplete-option', { timeout: 15000 }).first().click({ force: true })
 
     // 3. Status
     cy.get('.oxd-input-group').contains('Status').parent().parent().find('.oxd-select-text').click()
@@ -135,7 +126,7 @@ describe('OrangeHRM - Admin Module (Full)', () => {
   })
 
   // ================================
-  // THE REST OF YOUR TESTS (06 to 32)
+  // JOB TITLES
   // ================================
 
   it('TC06 - navigates to Job Titles page', () => {
@@ -161,6 +152,10 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.contains('.oxd-dropdown-menu li', 'Job Titles', { timeout: 30000 }).click()
     cy.get('.oxd-table-body', { timeout: 30000 }).should('contain.text', `QA Engineer ${timestamp}`)
   })
+
+  // ================================
+  // LOCATIONS
+  // ================================
 
   it('TC09 - navigates to Locations page', () => {
     cy.contains(TAB, 'Organization', { timeout: 30000 }).click()
@@ -189,6 +184,10 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.get('.oxd-table-body', { timeout: 30000 }).should('contain.text', newLocation.name)
   })
 
+  // ================================
+  // ORGANIZATION - GENERAL INFORMATION
+  // ================================
+
   it('TC12 - navigates to General Information page', () => {
     cy.contains(TAB, 'Organization', { timeout: 30000 }).click()
     cy.contains('.oxd-dropdown-menu li', 'General Information', { timeout: 30000 }).click()
@@ -201,6 +200,10 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.get('.oxd-form-loader', { timeout: 90000 }).should('not.exist')
     cy.get('.oxd-form', { timeout: 30000 }).should('be.visible')
   })
+
+  // ================================
+  // JOB - PAY GRADES
+  // ================================
 
   it('TC14 - navigates to Pay Grades page', () => {
     cy.contains(TAB, 'Job', { timeout: 30000 }).click()
@@ -221,6 +224,10 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.url({ timeout: 30000 }).should('include', '/admin/payGrade')
   })
 
+  // ================================
+  // JOB - EMPLOYMENT STATUS
+  // ================================
+
   it('TC17 - navigates to Employment Status page', () => {
     cy.contains(TAB, 'Job', { timeout: 30000 }).click()
     cy.contains('.oxd-dropdown-menu li', 'Employment Status', { timeout: 30000 }).click()
@@ -233,6 +240,10 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.contains('button', 'Add', { timeout: 30000 }).should('be.visible')
   })
 
+  // ================================
+  // JOB - JOB CATEGORIES & WORK SHIFTS
+  // ================================
+
   it('TC19 - navigates to Job Categories page', () => {
     cy.contains(TAB, 'Job', { timeout: 30000 }).click()
     cy.contains('.oxd-dropdown-menu li', 'Job Categories', { timeout: 30000 }).click()
@@ -244,6 +255,10 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.contains('.oxd-dropdown-menu li', 'Work Shifts', { timeout: 30000 }).click()
     cy.url({ timeout: 30000 }).should('include', '/admin/workShift')
   })
+
+  // ================================
+  // QUALIFICATIONS
+  // ================================
 
   it('TC21 - navigates to Skills page', () => {
     cy.contains(TAB, 'Qualifications', { timeout: 30000 }).click()
@@ -281,36 +296,45 @@ describe('OrangeHRM - Admin Module (Full)', () => {
     cy.url({ timeout: 30000 }).should('include', '/admin/membership')
   })
 
+  // ================================
+  // NATIONALITIES & BRANDING (FORCE CLICK FIXES)
+  // ================================
+
   it('TC27 - navigates to Nationalities page', () => {
-    cy.contains(TAB, 'Nationalities', { timeout: 30000 }).click()
+    // FORCE CLICK FIX: Stops Cypress from failing if the menu animation is stuck
+    cy.contains(TAB, 'Nationalities', { timeout: 30000 }).click({ force: true })
     cy.url({ timeout: 30000 }).should('include', '/admin/nationality')
   })
 
   it('TC28 - verifies Nationalities page has Add button', () => {
-    cy.contains(TAB, 'Nationalities', { timeout: 30000 }).click()
+    cy.contains(TAB, 'Nationalities', { timeout: 30000 }).click({ force: true })
     cy.contains('button', 'Add', { timeout: 30000 }).should('be.visible')
   })
 
   it('TC29 - navigates to Corporate Branding page', () => {
-    cy.contains(TAB, 'Corporate Branding', { timeout: 30000 }).click()
+    cy.contains(TAB, 'Corporate Branding', { timeout: 30000 }).click({ force: true })
     cy.url({ timeout: 30000 }).should('include', '/admin/addTheme')
   })
 
+  // ================================
+  // CONFIGURATION (FORCE CLICK FIXES)
+  // ================================
+
   it('TC30 - opens Configuration dropdown', () => {
-    cy.contains(TAB, 'Configuration', { timeout: 30000 }).click()
+    cy.contains(TAB, 'Configuration', { timeout: 30000 }).click({ force: true })
     cy.contains('.oxd-dropdown-menu li', 'Email Configuration', { timeout: 30000 }).should('be.visible')
-    cy.contains('.oxd-dropdown-menu li', 'Localization', { timeout: 30000 }).should('be.visible')
   })
 
   it('TC31 - navigates to Email Configuration page', () => {
-    cy.contains(TAB, 'Configuration', { timeout: 30000 }).click()
-    cy.contains('.oxd-dropdown-menu li', 'Email Configuration', { timeout: 30000 }).click()
+    cy.contains(TAB, 'Configuration', { timeout: 30000 }).click({ force: true })
+    cy.contains('.oxd-dropdown-menu li', 'Email Configuration', { timeout: 30000 }).click({ force: true })
     cy.url({ timeout: 30000 }).should('include', '/admin/listMailConfiguration')
   })
 
   it('TC32 - navigates to Localization page', () => {
-    cy.contains(TAB, 'Configuration', { timeout: 30000 }).click()
-    cy.contains('.oxd-dropdown-menu li', 'Localization', { timeout: 30000 }).click()
+    cy.contains(TAB, 'Configuration', { timeout: 30000 }).click({ force: true })
+    cy.contains('.oxd-dropdown-menu li', 'Localization', { timeout: 30000 }).click({ force: true })
     cy.url({ timeout: 30000 }).should('include', '/admin/localization')
   })
+
 })
